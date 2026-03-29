@@ -15,4 +15,4 @@ services:
     depends_on:
       - server
     ports:
-      - "800:80"
+      - "8001:80"

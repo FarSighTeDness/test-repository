@@ -1,5 +1,7 @@
 pipeline {
-  agent any
+  agent {
+    label 'docker'
+  }
 
   options {
     buildDiscarder(logRotator(numToKeepStr: '20', artifactNumToKeepStr: '10'))
@@ -32,7 +34,11 @@ pipeline {
         sh '''
           set -e
           command -v git >/dev/null 2>&1 || { echo "git is required on Jenkins agent"; exit 1; }
-          command -v docker >/dev/null 2>&1 || { echo "docker is required on Jenkins agent"; exit 1; }
+          command -v docker >/dev/null 2>&1 || {
+            echo "docker is required on Jenkins agent."
+            echo "Run this pipeline on a node labeled 'docker' with Docker CLI access."
+            exit 1
+          }
         '''
       }
     }

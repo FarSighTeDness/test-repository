@@ -31,27 +31,42 @@ pipeline {
       }
     }
 
-    stage('Deploy with Docker Compose') {
+    stage('Deploy') {
       steps {
         dir("${APP_DIR}") {
           sh '''
             set -e
+
+            if [ ! -f server/.env ] && [ -f server/.env.example ]; then
+              cp server/.env.example server/.env
+            fi
 
             if docker compose version >/dev/null 2>&1; then
               COMPOSE_CMD="docker compose"
             elif docker-compose version >/dev/null 2>&1; then
               COMPOSE_CMD="docker-compose"
             else
-              echo "Docker Compose is not installed on this Jenkins agent."
-              exit 1
+              COMPOSE_CMD=""
             fi
 
-            if [ ! -f server/.env ] && [ -f server/.env.example ]; then
-              cp server/.env.example server/.env
-            fi
+            if [ -n "$COMPOSE_CMD" ]; then
+              echo "Docker Compose found. Deploying with Compose."
+              $COMPOSE_CMD down --remove-orphans || true
+              $COMPOSE_CMD up -d --build
+            else
+              echo "Docker Compose not found. Deploying with plain Docker."
 
-            $COMPOSE_CMD down --remove-orphans || true
-            $COMPOSE_CMD up -d --build
+              docker network inspect myapp-net >/dev/null 2>&1 || docker network create myapp-net
+
+              docker rm -f server >/dev/null 2>&1 || true
+              docker rm -f client >/dev/null 2>&1 || true
+
+              docker build -t myapp-server:latest ./server
+              docker build -t myapp-client:latest ./client
+
+              docker run -d --name server --network myapp-net --env-file server/.env -p 5001:5001 myapp-server:latest
+              docker run -d --name client --network myapp-net -p 8001:80 myapp-client:latest
+            fi
           '''
         }
       }

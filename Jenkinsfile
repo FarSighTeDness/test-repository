@@ -19,9 +19,14 @@ pipeline {
     stage('Checkout') {
       steps {
         deleteDir()
+        script {
+          def selectedBranch = (params.BRANCH ?: '').trim()
+          env.DEPLOY_BRANCH = selectedBranch ? selectedBranch : 'main'
+          echo "Using branch: ${env.DEPLOY_BRANCH}"
+        }
         sh '''
           set -e
-          git clone --depth 1 --branch "${BRANCH}" "${REPO_URL}" "${APP_DIR}"
+          git clone --depth 1 --branch "${DEPLOY_BRANCH}" "${REPO_URL}" "${APP_DIR}"
         '''
       }
     }

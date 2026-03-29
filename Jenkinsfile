@@ -31,6 +31,25 @@ pipeline {
       }
     }
 
+    stage('Validate Agent Tools') {
+      steps {
+        sh '''
+          set -e
+
+          command -v git >/dev/null 2>&1 || {
+            echo "git is required on this Jenkins agent."
+            exit 1
+          }
+
+          command -v docker >/dev/null 2>&1 || {
+            echo "docker CLI is not available on this Jenkins agent."
+            echo "Install docker CLI and give Jenkins access to Docker daemon (for example mount /var/run/docker.sock)."
+            exit 1
+          }
+        '''
+      }
+    }
+
     stage('Deploy') {
       steps {
         dir("${APP_DIR}") {

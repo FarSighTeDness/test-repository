@@ -16,7 +16,7 @@ const trains = [
   { number: "88888", name: "Humsafar Express",   departure: "08:30 PM", arrival: "06:45 AM", status: "On Time" },
   { number: "99999", name: "Tejas Express",      departure: "03:15 PM", arrival: "08:00 PM", status: "Delayed" },
   { number: "10101", name: "Sampark Kranti",     departure: "06:45 PM", arrival: "11:30 PM", status: "Scheduled" },
-  { number: "20202", name: "Intercity Express",  departure: "07:00 AM", arrival: "01:15 PM", status: "Scheduled" },
+  { number: "12800", name: "Intercity Express",  departure: "07:00 AM", arrival: "01:15 PM", status: "Scheduled" },
 ];
 
 const stats = [

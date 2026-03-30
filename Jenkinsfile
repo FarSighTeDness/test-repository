@@ -120,6 +120,14 @@ pipeline {
 
             wait_for_container myapp-server 5001/tcp "node --input-type=module -e \"import http from 'node:http'; const req = http.get('http://127.0.0.1:5001/', (res) => process.exit(res.statusCode < 500 ? 0 : 1)); req.on('error', () => process.exit(1)); req.setTimeout(2000, () => { req.destroy(); process.exit(1); });\""
             wait_for_container myapp-client 80/tcp "wget -qO- http://127.0.0.1/ >/dev/null"
+
+            echo "Container port publication summary:"
+            docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+
+            # Verify host-facing ports from Jenkins agent side.
+            wget -qO- http://127.0.0.1:5001/ >/dev/null
+            wget -qO- http://127.0.0.1:8001/ >/dev/null
+            echo "Host port checks passed: 5001 and 8001 are reachable from the Jenkins agent."
           '''
         }
       }

@@ -6,7 +6,7 @@ services:
     env_file:
       - ./server/.env
     ports:
-      - "5001:5001"
+      - "0.0.0.0:5001:5001"
 
   client:
     build:
@@ -15,4 +15,4 @@ services:
     depends_on:
       - server
     ports:
-      - "8001:80"
+      - "0.0.0.0:8001:80"

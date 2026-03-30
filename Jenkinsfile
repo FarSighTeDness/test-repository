@@ -114,8 +114,8 @@ pipeline {
               docker build -t myapp-server:latest ./server
               docker build -t myapp-client:latest ./client
 
-              docker run -d --name myapp-server --network myapp-net --env-file server/.env -p 5001:5001 myapp-server:latest
-              docker run -d --name myapp-client --network myapp-net -p 8001:80 myapp-client:latest
+              docker run -d --name myapp-server --network myapp-net --env-file server/.env -p 0.0.0.0:5001:5001 myapp-server:latest
+              docker run -d --name myapp-client --network myapp-net -p 0.0.0.0:8001:80 myapp-client:latest
             fi
 
             wait_for_container myapp-server 5001/tcp "node --input-type=module -e \"import http from 'node:http'; const req = http.get('http://127.0.0.1:5001/', (res) => process.exit(res.statusCode < 500 ? 0 : 1)); req.on('error', () => process.exit(1)); req.setTimeout(2000, () => { req.destroy(); process.exit(1); });\""
@@ -123,6 +123,15 @@ pipeline {
 
             echo "Container port publication summary:"
             docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'
+
+            server_host_ip=$(docker inspect --format '{{(index (index .NetworkSettings.Ports "5001/tcp") 0).HostIp}}' myapp-server)
+            client_host_ip=$(docker inspect --format '{{(index (index .NetworkSettings.Ports "80/tcp") 0).HostIp}}' myapp-client)
+
+            echo "myapp-server published HostIp: $server_host_ip"
+            echo "myapp-client published HostIp: $client_host_ip"
+
+            [ "$server_host_ip" = "0.0.0.0" ] || [ "$server_host_ip" = "::" ]
+            [ "$client_host_ip" = "0.0.0.0" ] || [ "$client_host_ip" = "::" ]
 
             # Verify host-facing ports from Jenkins agent side.
             wget -qO- http://127.0.0.1:5001/ >/dev/null

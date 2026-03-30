@@ -56,6 +56,37 @@ pipeline {
           sh '''
             set -e
 
+            wait_for_container() {
+              container_name="$1"
+              port_label="$2"
+              probe_command="$3"
+              max_attempts=30
+              attempt=1
+
+              while [ "$attempt" -le "$max_attempts" ]; do
+                if docker ps --filter "name=^/${container_name}$" --filter "status=running" | grep -q "$container_name"; then
+                  if docker exec "$container_name" sh -c "$probe_command"; then
+                    exposed_port=$(docker port "$container_name" "$port_label" 2>/dev/null || true)
+                    echo "$container_name is ready. Published port: ${exposed_port:-not published}"
+                    return 0
+                  fi
+                else
+                  echo "$container_name failed to start correctly."
+                  docker ps -a --filter "name=$container_name"
+                  docker logs "$container_name" || true
+                  return 1
+                fi
+
+                sleep 2
+                attempt=$((attempt + 1))
+              done
+
+              echo "Timed out waiting for $container_name to become ready."
+              docker ps -a --filter "name=$container_name"
+              docker logs "$container_name" || true
+              return 1
+            }
+
             if [ ! -f server/.env ] && [ -f server/.env.example ]; then
               cp server/.env.example server/.env
             fi
@@ -77,15 +108,18 @@ pipeline {
 
               docker network inspect myapp-net >/dev/null 2>&1 || docker network create myapp-net
 
-              docker rm -f server >/dev/null 2>&1 || true
-              docker rm -f client >/dev/null 2>&1 || true
+              docker rm -f myapp-server >/dev/null 2>&1 || true
+              docker rm -f myapp-client >/dev/null 2>&1 || true
 
               docker build -t myapp-server:latest ./server
               docker build -t myapp-client:latest ./client
 
-              docker run -d --name server --network myapp-net --env-file server/.env -p 5001:5001 myapp-server:latest
-              docker run -d --name client --network myapp-net -p 8001:80 myapp-client:latest
+              docker run -d --name myapp-server --network myapp-net --env-file server/.env -p 5001:5001 myapp-server:latest
+              docker run -d --name myapp-client --network myapp-net -p 8001:80 myapp-client:latest
             fi
+
+            wait_for_container myapp-server 5001/tcp "node --input-type=module -e \"import http from 'node:http'; const req = http.get('http://127.0.0.1:5001/', (res) => process.exit(res.statusCode < 500 ? 0 : 1)); req.on('error', () => process.exit(1)); req.setTimeout(2000, () => { req.destroy(); process.exit(1); });\""
+            wait_for_container myapp-client 80/tcp "wget -qO- http://127.0.0.1/ >/dev/null"
           '''
         }
       }

@@ -7,6 +7,7 @@ const trains = [
   { number: "67890", name: "Local C",   departure: "10:00 AM", arrival: "11:45 AM", status: "On Time" },
   { number: "11111", name: "Rapid D",   departure: "11:30 AM", arrival: "03:45 PM", status: "On Time" },
   { number: "22222", name: "Express E", departure: "02:00 PM", arrival: "06:15 PM", status: "Cancelled" },
+  { number: "12423", name: "RajDhani Express ", departure: "04:00 PM", arrival: "09:15 PM", status: "On Time" },
 ];
 
 const stats = [
@@ -14,6 +15,7 @@ const stats = [
   { label: "On Time",       value: trains.filter((t) => t.status === "On Time").length,    color: "bg-green-100 text-green-800" },
   { label: "Delayed",       value: trains.filter((t) => t.status === "Delayed").length,   color: "bg-yellow-100 text-yellow-800" },
   { label: "Cancelled",     value: trains.filter((t) => t.status === "Cancelled").length, color: "bg-red-100 text-red-800" },
+  { label: "On Time",       value: trains.filter((t) => t.status === "On Time").length,    color: "bg-green-100 text-green-800" },
 ];
 
 export default function Dashboard() {
